@@ -3,11 +3,12 @@ package main
 import "sync"
 
 var Handlers = map[string]func([]Value) Value{
-	"PING": ping,
-	"SET":  set,
-	"GET":  get,
-	"HSET": hset,
-	"HGET": hget,
+	"PING":    ping,
+	"SET":     set,
+	"GET":     get,
+	"HSET":    hset,
+	"HGET":    hget,
+	"HGETALL": hgetall,
 }
 
 func ping(args []Value) Value {
@@ -92,4 +93,28 @@ func hget(args []Value) Value {
 	}
 
 	return Value{typ: "bulk", bulk: value}
+}
+
+func hgetall(args []Value) Value {
+	if len(args) != 1 {
+		return Value{typ: "error", str: "ERR wrong number of arguments"}
+	}
+
+	hash := args[0].bulk
+
+	HSETsMu.RLock()
+	fields, ok := HSETs[hash]
+	HSETsMu.RUnlock()
+
+	if !ok {
+		return Value{typ: "array", array: []Value{}}
+	}
+
+	arr := make([]Value, 0, len(fields)*2)
+	for field, val := range fields {
+		arr = append(arr, Value{typ: "bulk", bulk: field})
+		arr = append(arr, Value{typ: "bulk", bulk: val})
+	}
+
+	return Value{typ: "array", array: arr}
 }
