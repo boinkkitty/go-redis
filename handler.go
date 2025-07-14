@@ -58,20 +58,26 @@ var HSETs = map[string]map[string]string{}
 var HSETsMu = sync.RWMutex{}
 
 func hset(args []Value) Value {
-	if len(args) != 3 {
+	if len(args) < 3 || len(args)%2 == 0 {
 		return Value{typ: "error", str: "ERR wrong number of arguments"}
 	}
 
-	hash := args[0].bulk
-	key := args[1].bulk
-	value := args[2].bulk
+	hashKey := args[0].bulk
 
 	HSETsMu.Lock()
-	if _, ok := HSETs[hash]; !ok {
-		HSETs[hash] = map[string]string{}
+	defer HSETsMu.Unlock()
+
+	// Create the hash if it doesn't exist yet
+	if _, ok := HSETs[hashKey]; !ok {
+		HSETs[hashKey] = make(map[string]string)
 	}
-	HSETs[hash][key] = value
-	HSETsMu.Unlock()
+
+	// Loop through each field-value pair
+	for i := 1; i < len(args); i += 2 {
+		field := args[i].bulk
+		value := args[i+1].bulk
+		HSETs[hashKey][field] = value
+	}
 
 	return Value{typ: "string", str: "OK"}
 }
