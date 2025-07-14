@@ -41,12 +41,12 @@ A lightweight in-memory database written in Go that replicates basic Redis behav
 2. Run the server:
    ```bash
    cd go-redis
-   go run *.go
+   make server
    ```
 
 ### Client
 
 1. Run client:
    ```bash
-   redis-cli
+   make client
    ```
