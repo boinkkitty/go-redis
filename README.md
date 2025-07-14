@@ -26,18 +26,7 @@ A lightweight in-memory database written in Go that replicates basic Redis behav
 | `HGET` | Gets a field value in a hash | `HGET key field`                         |
 | `HGETALL` | Gets all fields/values in hash| `HGETALL key`                             |
 
-Example usage in `handlers.go`:
-```go
-var Handlers = map[string]func([]Value) Value{
-	"PING":    ping,
-	"SET":     set,
-	"GET":     get,
-	"HSET":    hset,
-	"HGET":    hget,
-	"HGETALL": hgetall,
-}
 
-```
 
 ---
 
