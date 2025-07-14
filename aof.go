@@ -63,10 +63,12 @@ func (aof *Aof) Read(callback func(value Value)) error {
 	aof.mu.Lock()
 	defer aof.mu.Unlock()
 
-	resp := NewResp(aof.file)
+	aof.file.Seek(0, io.SeekStart)
+
+	reader := NewResp(aof.file)
 
 	for {
-		value, err := resp.Read()
+		value, err := reader.Read()
 		if err == nil {
 			callback(value)
 		}

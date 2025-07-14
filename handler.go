@@ -13,7 +13,7 @@ var Handlers = map[string]func([]Value) Value{
 
 func ping(args []Value) Value {
 	if len(args) == 0 {
-		return Value{typ: "String", str: "PONG"}
+		return Value{typ: "string", str: "PONG"}
 	}
 	return Value{typ: "string", str: args[0].bulk}
 }
@@ -23,7 +23,7 @@ var SETsMu = sync.RWMutex{}
 
 func set(args []Value) Value {
 	if len(args) != 2 {
-		return Value{typ: "error", str: "ERR wrong number of arguments"}
+		return Value{typ: "error", str: "ERR wrong number of arguments for 'SET' command"}
 	}
 
 	key := args[0].bulk
@@ -38,7 +38,7 @@ func set(args []Value) Value {
 
 func get(args []Value) Value {
 	if len(args) != 1 {
-		return Value{typ: "error", str: "ERR wrong number of arguments"}
+		return Value{typ: "error", str: "ERR wrong number of arguments for 'GET' command"}
 	}
 
 	key := args[0].bulk
@@ -59,7 +59,7 @@ var HSETsMu = sync.RWMutex{}
 
 func hset(args []Value) Value {
 	if len(args) < 3 || len(args)%2 == 0 {
-		return Value{typ: "error", str: "ERR wrong number of arguments"}
+		return Value{typ: "error", str: "ERR wrong number of arguments for 'HSET' command"}
 	}
 
 	hashKey := args[0].bulk
@@ -67,12 +67,10 @@ func hset(args []Value) Value {
 	HSETsMu.Lock()
 	defer HSETsMu.Unlock()
 
-	// Create the hash if it doesn't exist yet
 	if _, ok := HSETs[hashKey]; !ok {
 		HSETs[hashKey] = make(map[string]string)
 	}
 
-	// Loop through each field-value pair
 	for i := 1; i < len(args); i += 2 {
 		field := args[i].bulk
 		value := args[i+1].bulk
@@ -84,7 +82,7 @@ func hset(args []Value) Value {
 
 func hget(args []Value) Value {
 	if len(args) != 2 {
-		return Value{typ: "error", str: "ERR wrong number of arguments"}
+		return Value{typ: "error", str: "ERR wrong number of arguments for 'HGET' command"}
 	}
 
 	hash := args[0].bulk
@@ -103,7 +101,7 @@ func hget(args []Value) Value {
 
 func hgetall(args []Value) Value {
 	if len(args) != 1 {
-		return Value{typ: "error", str: "ERR wrong number of arguments"}
+		return Value{typ: "error", str: "ERR wrong number of arguments for 'HGETALL' command"}
 	}
 
 	hash := args[0].bulk
