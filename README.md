@@ -47,16 +47,17 @@ var Handlers = map[string]func([]Value) Value{
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/redis-replica-go.git
+   git clone https://github.com/boinkkitty/go-redis.git
    ```
 2. Run the server:
    ```bash
    cd go-redis
    go run *.go
    ```
-   
+
 ### Client
 
-```bash
-  redis-cli
-```
+1. Run client:
+   ```bash
+   redis-cli
+   ```
