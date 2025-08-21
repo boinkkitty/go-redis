@@ -1,4 +1,4 @@
-package main
+package aof
 
 import (
 	"bufio"
@@ -6,6 +6,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/boinkkitty/go-redis/internal/resp"
 )
 
 type Aof struct {
@@ -47,7 +49,7 @@ func (aof *Aof) Close() error {
 	return aof.file.Close()
 }
 
-func (aof *Aof) Write(value Value) error {
+func (aof *Aof) Write(value resp.Value) error {
 	aof.mu.Lock()
 	defer aof.mu.Unlock()
 
@@ -59,24 +61,21 @@ func (aof *Aof) Write(value Value) error {
 	return nil
 }
 
-func (aof *Aof) Read(callback func(value Value)) error {
+func (aof *Aof) Read(callback func(value resp.Value)) error {
 	aof.mu.Lock()
 	defer aof.mu.Unlock()
 
 	aof.file.Seek(0, io.SeekStart)
-
-	reader := NewResp(aof.file)
-
+	reader := resp.NewResp(aof.file)
 	for {
 		value, err := reader.Read()
-		if err == nil {
-			callback(value)
-		}
 		if err == io.EOF {
 			break
 		}
-		return err
+		if err != nil {
+			return err
+		}
+		callback(value)
 	}
-
 	return nil
 }
