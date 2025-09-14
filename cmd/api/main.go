@@ -14,15 +14,19 @@ import (
 const TCP_NETWORK = "tcp"
 const REDIS_PORT = ":6379"
 
+// main is the entrypoint for the Redis-like server.
+// It starts the TCP listener, loads the AOF file, and accepts client connections.
 func main() {
 	fmt.Println("Listening on port", REDIS_PORT)
 
+	// Start TCP listener
 	l, err := net.Listen(TCP_NETWORK, REDIS_PORT)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
+	// Initialize AOF for persistence
 	aofInst, err := aof.NewAof("database.aof")
 	if err != nil {
 		fmt.Println(err)
@@ -30,6 +34,7 @@ func main() {
 	}
 	defer aofInst.Close()
 
+	// Replay commands from the AOF file to restore state
 	aofInst.Read(func(value resp.Value) {
 		command := strings.ToUpper(value.Array[0].Bulk)
 		args := value.Array[1:]
@@ -41,6 +46,9 @@ func main() {
 		handlerFunc(args)
 	})
 
+	// Accept client connections
+	// Each connection is handled in a separate goroutine
+	// to allow concurrent clients.
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -52,6 +60,9 @@ func main() {
 	}
 }
 
+// handleConnection handles a single client connection.
+// It reads RESP commands, dispatches to the appropriate handler, and writes responses.
+// If the command is a mutating command (SET, HSET), it is also written to the AOF file.
 func handleConnection(conn net.Conn, aofInst *aof.Aof) {
 	defer conn.Close()
 	for {
@@ -78,6 +89,7 @@ func handleConnection(conn net.Conn, aofInst *aof.Aof) {
 			writer.Write(resp.Value{Typ: "string", Str: ""})
 			continue
 		}
+		// Persist mutating commands to the AOF file
 		if command == "SET" || command == "HSET" {
 			aofInst.Write(value)
 		}

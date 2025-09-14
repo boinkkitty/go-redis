@@ -10,12 +10,16 @@ import (
 	"github.com/boinkkitty/go-redis/internal/resp"
 )
 
+// Aof provides append-only file persistence for Redis-like commands.
+// It is safe for concurrent use.
 type Aof struct {
 	file *os.File
 	rd   *bufio.Reader
 	mu   sync.Mutex
 }
 
+// NewAof opens or creates an append-only file at the given path.
+// It starts a background goroutine to periodically sync the file to disk.
 func NewAof(path string) (*Aof, error) {
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
@@ -32,9 +36,7 @@ func NewAof(path string) (*Aof, error) {
 			aof.mu.Lock()
 
 			aof.file.Sync()
-
 			aof.mu.Unlock()
-
 			time.Sleep(time.Second)
 		}
 	}()
@@ -42,6 +44,7 @@ func NewAof(path string) (*Aof, error) {
 	return aof, nil
 }
 
+// Close closes the underlying append-only file.
 func (aof *Aof) Close() error {
 	aof.mu.Lock()
 	defer aof.mu.Unlock()
@@ -49,6 +52,8 @@ func (aof *Aof) Close() error {
 	return aof.file.Close()
 }
 
+// Write appends a RESP value to the append-only file.
+// It is safe for concurrent use.
 func (aof *Aof) Write(value resp.Value) error {
 	aof.mu.Lock()
 	defer aof.mu.Unlock()
@@ -61,6 +66,9 @@ func (aof *Aof) Write(value resp.Value) error {
 	return nil
 }
 
+// Read replays all RESP values from the append-only file,
+// calling the provided callback for each value.
+// The callback is called in the order the values appear in the file.
 func (aof *Aof) Read(callback func(value resp.Value)) error {
 	aof.mu.Lock()
 	defer aof.mu.Unlock()

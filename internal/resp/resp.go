@@ -1,3 +1,4 @@
+// Package resp implements the RESP (REdis Serialization Protocol) parser and serializer.
 package resp
 
 import (
@@ -7,31 +8,35 @@ import (
 	"strconv"
 )
 
+// RESP type byte constants.
 const (
-	STRING  = '+'
-	ERROR   = '-'
-	INTEGER = ':'
-	BULK    = '$'
-	ARRAY   = '*'
+	STRING  = '+' // Simple string
+	ERROR   = '-' // Error
+	INTEGER = ':' // Integer
+	BULK    = '$' // Bulk string
+	ARRAY   = '*' // Array
 )
 
-// For serialization and deserialization
+// Value represents a RESP value (string, error, integer, bulk, array).
 type Value struct {
-	Typ   string  // Exported
-	Str   string  // Exported
-	Num   int     // Exported
-	Bulk  string  // Exported
-	Array []Value // Exported
+	Typ   string  // Type of value: "string", "error", "integer", "bulk", "array", "null"
+	Str   string  // String value
+	Num   int     // Integer value
+	Bulk  string  // Bulk string value
+	Array []Value // Array of values
 }
 
+// Resp reads RESP values from an io.Reader.
 type Resp struct {
 	reader *bufio.Reader
 }
 
+// NewResp creates a new RESP reader from an io.Reader.
 func NewResp(rd io.Reader) *Resp {
 	return &Resp{reader: bufio.NewReader(rd)}
 }
 
+// readLine reads a line ending with \r\n from the underlying reader.
 func (r *Resp) readLine() (line []byte, n int, err error) {
 	for {
 		b, err := r.reader.ReadByte()
@@ -53,6 +58,7 @@ func (r *Resp) readLine() (line []byte, n int, err error) {
 	return line[:len(line)-2], n, nil
 }
 
+// readInteger reads an integer from the underlying reader.
 func (r *Resp) readInteger() (x int, n int, err error) {
 	line, n, err := r.readLine()
 	if err != nil {
@@ -66,6 +72,7 @@ func (r *Resp) readInteger() (x int, n int, err error) {
 	return int(i64), n, nil
 }
 
+// Read reads a RESP value from the underlying reader.
 func (r *Resp) Read() (Value, error) {
 	b, err := r.reader.ReadByte()
 	if err != nil {
@@ -126,6 +133,7 @@ func (r *Resp) Read() (Value, error) {
 	}
 }
 
+// Marshal serializes a Value into RESP bytes.
 func (v Value) Marshal() []byte {
 	switch v.Typ {
 	case "array":
@@ -143,6 +151,7 @@ func (v Value) Marshal() []byte {
 	}
 }
 
+// marshalString serializes a simple string Value.
 func (v Value) marshalString() []byte {
 	var bytes []byte
 	bytes = append(bytes, STRING)
@@ -151,6 +160,7 @@ func (v Value) marshalString() []byte {
 	return bytes
 }
 
+// marshalBulk serializes a bulk string Value.
 func (v Value) marshalBulk() []byte {
 	var bytes []byte
 	bytes = append(bytes, BULK)
@@ -161,6 +171,7 @@ func (v Value) marshalBulk() []byte {
 	return bytes
 }
 
+// marshalArray serializes an array Value.
 func (v Value) marshalArray() []byte {
 	var bytes []byte
 	length := len(v.Array)
@@ -173,6 +184,7 @@ func (v Value) marshalArray() []byte {
 	return bytes
 }
 
+// marshalError serializes an error Value.
 func (v Value) marshalError() []byte {
 	var bytes []byte
 	bytes = append(bytes, ERROR)
@@ -181,18 +193,22 @@ func (v Value) marshalError() []byte {
 	return bytes
 }
 
+// marshalNull serializes a null Value.
 func (v Value) marshalNull() []byte {
 	return []byte("$-1\r\n")
 }
 
+// Writer writes RESP values to an io.Writer.
 type Writer struct {
 	writer io.Writer
 }
 
+// NewWriter creates a new RESP writer from an io.Writer.
 func NewWriter(w io.Writer) *Writer {
 	return &Writer{writer: w}
 }
 
+// Write writes a Value to the underlying writer in RESP format.
 func (w *Writer) Write(v Value) error {
 	var bytes = v.Marshal()
 

@@ -6,6 +6,7 @@ import (
 	"github.com/boinkkitty/go-redis/internal/resp"
 )
 
+// Handlers maps command names to their handler functions.
 var Handlers = map[string]func([]resp.Value) resp.Value{
 	"PING":    ping,
 	"SET":     set,
@@ -13,8 +14,10 @@ var Handlers = map[string]func([]resp.Value) resp.Value{
 	"HSET":    hset,
 	"HGET":    hget,
 	"HGETALL": hgetall,
+	// "DEL":     del,
 }
 
+// ping handles the PING command. Returns PONG or echoes the argument.
 func ping(args []resp.Value) resp.Value {
 	if len(args) == 0 {
 		return resp.Value{Typ: "string", Str: "PONG"}
@@ -22,9 +25,13 @@ func ping(args []resp.Value) resp.Value {
 	return resp.Value{Typ: "string", Str: args[0].Bulk}
 }
 
+// SETs stores string key-value pairs.
 var SETs = map[string]string{}
+
+// SETsMu protects SETs for concurrent access.
 var SETsMu = sync.RWMutex{}
 
+// set handles the SET command. Sets a string key to a value.
 func set(args []resp.Value) resp.Value {
 	if len(args) != 2 {
 		return resp.Value{Typ: "error", Str: "ERR wrong number of arguments for 'SET' command"}
@@ -37,6 +44,7 @@ func set(args []resp.Value) resp.Value {
 	return resp.Value{Typ: "string", Str: "OK"}
 }
 
+// get handles the GET command. Gets the value of a string key.
 func get(args []resp.Value) resp.Value {
 	if len(args) != 1 {
 		return resp.Value{Typ: "error", Str: "ERR wrong number of arguments for 'GET' command"}
@@ -51,9 +59,13 @@ func get(args []resp.Value) resp.Value {
 	return resp.Value{Typ: "bulk", Bulk: value}
 }
 
+// HSETs stores hash key-value pairs.
 var HSETs = map[string]map[string]string{}
+
+// HSETsMu protects HSETs for concurrent access.
 var HSETsMu = sync.RWMutex{}
 
+// hset handles the HSET command. Sets fields in a hash.
 func hset(args []resp.Value) resp.Value {
 	if len(args) < 3 || len(args)%2 == 0 {
 		return resp.Value{Typ: "error", Str: "ERR wrong number of arguments for 'HSET' command"}
@@ -72,6 +84,7 @@ func hset(args []resp.Value) resp.Value {
 	return resp.Value{Typ: "string", Str: "OK"}
 }
 
+// hget handles the HGET command. Gets a field from a hash.
 func hget(args []resp.Value) resp.Value {
 	if len(args) != 2 {
 		return resp.Value{Typ: "error", Str: "ERR wrong number of arguments for 'HGET' command"}
@@ -87,6 +100,7 @@ func hget(args []resp.Value) resp.Value {
 	return resp.Value{Typ: "bulk", Bulk: value}
 }
 
+// hgetall handles the HGETALL command. Gets all fields and values from a hash.
 func hgetall(args []resp.Value) resp.Value {
 	if len(args) != 1 {
 		return resp.Value{Typ: "error", Str: "ERR wrong number of arguments for 'HGETALL' command"}
